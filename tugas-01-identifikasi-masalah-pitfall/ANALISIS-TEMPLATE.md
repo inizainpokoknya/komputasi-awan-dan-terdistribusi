@@ -5,7 +5,7 @@
 | Nama | NIM | Kontribusi |
 |---|---|---|
 | [Zain Ahmad Suraiban] | [103072430001] | [pitfall/bagian yang dikerjakan] |
-| [nama 2] | [nim] | [pitfall/bagian yang dikerjakan] |
+| [Muhammad Rohman Azizi] | [103072400011] | [pitfall/bagian yang dikerjakan] |
 | [nama 3] | [nim] | [pitfall/bagian yang dikerjakan] |
 | [nama 4] | [nim] | [pitfall/bagian yang dikerjakan] |
 
