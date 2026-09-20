@@ -6,8 +6,8 @@
 |---|---|---|
 | [Zain Ahmad Suraiban] | [103072430001] | [Latency is Zero] |
 | [Muhammad Rohman Azizi] | [103072400011] | [The Network Reliable] |
-| [Rochmatul Choirul Anam] | [103072400024] | [pitfall/bagian yang dikerjakan] |
-| [Wirajalu Setyonegoro Wibowo] | [103072400094] | [pitfall/bagian yang dikerjakan] |
+| [Rochmatul Choirul Anam] | [103072400024] | [Topology Doesn't Change & Single Point of Failure (SPOF)] |
+| [Wirajalu Setyonegoro Wibowo] | [103072400094] | [Topology Doesn't Change & Single Point of Failure (SPOF)] |
 
 ## Pitfall 1: [Latency is Zero] — ditulis oleh [Zain Ahmad Suraiban]
 
