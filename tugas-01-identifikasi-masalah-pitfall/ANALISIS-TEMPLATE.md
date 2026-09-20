@@ -38,9 +38,24 @@
 
 ---
 
-## Pitfall 3: [nama pitfall] — ditulis oleh [nama]
+## Pitfall 3: [Topology Doesn't Change & Single Point of Failure (SPOF)] — ditulis oleh [Rochmatul Choirul Anam]
 
-(ulangi struktur di atas)
+**Bukti di skenario:** "Server backend kadang crash total dan perlu di-restart manual."
+"Saat trafik naik, satu server yang menangani semua modul (pesanan, pembayaran, notifikasi kurir) kewalahan karena semuanya berjalan di satu proses monolitik yang sama."
+
+**Kenapa ini keliru:** Asumsi bahwa topologi sistem bersifat statis dan satu node server mampu menampung seluruh beban kerja tanpa perubahan adalah kesalahan fatal. Dalam realitas sistem terdistribusi, infrastruktur selalu dinamis: server bisa mengalami kegagalan perangkat keras (hardware failure), kebocoran memori, atau kelebihan beban (overload) yang tidak terduga. Mengandalkan satu entitas fisik untuk menjalankan seluruh logika bisnis menciptakan kerentanan total; jika entitas itu gagal, tidak ada cadangan (backup) yang siap mengambil alih secara otomatis.
+
+**Dampak ke FoodGo:** Terjadinya Total Service Outage yang bergantung pada intervensi manusia. Ketika server monolitik tersebut crash akibat kehabisan sumber daya (CPU/RAM) saat lonjakan pesanan, seluruh layanan FoodGo—mulai dari pemesanan hingga pelacakan kurir—berhenti berfungsi. Tim engineering harus melakukan restart manual, yang berarti adanya downtime signifikan. Selama periode ini, FoodGo kehilangan potensi pendapatan, merusak reputasi merek, dan mengecewakan pelanggan yang sedang lapar. Tidak adanya isolasi juga berarti bug kecil di modul notifikasi bisa meruntuhkan modul pembayaran.
+
+**Solusi desain awal:** Implementasi **Redundansi Aktif-Aktif dengan Load Balancer dan Orkestrasi Otomatis.**
+- Ubah arsitektur dari satu server tunggal menjadi beberapa instans layanan yang berjalan secara paralel.
+- Gunakan Load Balancer di depan instans-instans tersebut untuk mendistribusikan trafik secara merata.
+- Terapkan Health Checks otomatis: jika satu instans tidak merespons, Load Balancer akan segera menghentikan pengiriman trafik ke instans tersebut.
+- Gunakan alat orkestrasi (seperti Kubernetes) untuk mendeteksi kegagalan dan secara otomatis meluncurkan instans pengganti (self-healing) tanpa perlu campur tangan manual tim engineering.
+
+**Trade-off:** Solusi ini meningkatkan **kompleksitas manajemen data dan biaya operasional.**
+- **Konsistensi Data:** Dengan banyak instans yang berjalan bersamaan, memastikan konsistensi data (misalnya: mencegah pesanan ganda atau stok makanan yang tidak akurat) menjadi jauh lebih sulit dan memerlukan mekanisme distributed locking atau database yang mendukung konsistensi tinggi.
+- **Biaya:** Menjalankan beberapa server sekaligus jelas lebih mahal daripada satu server, meskipun hal ini sebanding dengan nilai keandalan (reliability) yang didapat. Selain itu, tim DevOps perlu memiliki keahlian lebih tinggi untuk mengelola lingkungan yang terdistribusi.
 
 ---
 
