@@ -4,22 +4,23 @@
 
 | Nama | NIM | Kontribusi |
 |---|---|---|
-| [Zain Ahmad Suraiban] | [103072430001] | [pitfall/bagian yang dikerjakan] |
+| [Zain Ahmad Suraiban] | [103072430001] | [Latency is Zero] |
 | [Muhammad Rohman Azizi] | [103072400011] | [The Network Reliable] |
 | [nama 3] | [nim] | [pitfall/bagian yang dikerjakan] |
 | [nama 4] | [nim] | [pitfall/bagian yang dikerjakan] |
 
-## Pitfall 1: [nama pitfall] — ditulis oleh [nama]
+## Pitfall 1: [Latency is Zero] — ditulis oleh [Zain Ahmad Suraiban]
 
-**Bukti di skenario:** [kutip/paraphrase bagian skenario]
+**Bukti di skenario:** [Tim menemukan bahwa kode mereka... tidak ada timeout sama sekali pada pemanggilan antar service (modul pesanan memanggil modul pembayaran dan menunggu tanpa batas waktu)."
+"Aplikasi jadi sangat lambat, beberapa permintaan timeout.]
 
-**Kenapa ini keliru:** [penjelasan]
+**Kenapa ini keliru:** [Dalam sistem terdistribusi nyata, latensi tidak pernah nol. Komunikasi antar-proses atau antar-jaringan selalu melibatkan biaya waktu (overhead) akibat propagasi sinyal, serialisasi data, antrian pada router, dan pemrosesan di sisi penerima. Mengasumsikan latensi nol berarti mengabaikan variabilitas kinerja jaringan dan beban server, yang merupakan hal yang tidak dapat dihindari dalam lingkungan produksi yang dinamis.]
 
-**Dampak ke FoodGo:** [mekanisme kegagalan konkret]
+**Dampak ke FoodGo:** [Karena asumsi latensi nol, pengembang tidak menetapkan batas waktu (timeout). Ketika modul pembayaran mengalami keterlambatan respons (misalnya karena beban tinggi atau garbage collection), modul pesanan akan memblokir thread eksekusi secara indefinitif. Hal ini menyebabkan kehabisan thread pool pada server backend. Server menjadi tidak responsif terhadap permintaan baru meskipun sumber daya CPU masih tersedia, karena semua worker thread terjebak dalam status waiting. Ini memicu efek domino yang membuat seluruh aplikasi terasa sangat lambat dan akhirnya crash karena kehabisan memori atau file descriptor]
 
-**Solusi desain awal:** [usulan solusi]
+**Solusi desain awal:** [Implementasi Strict Timeout pada setiap panggilan antar-layanan (inter-service calls). Setiap permintaan harus memiliki batas waktu maksimal yang realistis (misalnya 2-5 detik). Jika respons tidak diterima dalam batas waktu tersebut, koneksi harus diputus secara paksa dan dianggap sebagai kegagalan. Solusi ini sebaiknya dipadukan dengan pola Circuit Breaker untuk mencegah pemanggilan berulang ke layanan yang sedang bermasalah.]
 
-**Trade-off:** [apa yang dikorbankan/risiko dari solusi ini]
+**Trade-off:** [Penerapan timeout yang ketat berisiko menyebabkan false positive failures. Artinya, permintaan sebenarnya berhasil diproses oleh server tujuan, tetapi responsnya datang sedikit lebih lambat dari batas timeout yang ditetapkan. Klien akan menganggap permintaan gagal dan mungkin memicu retry, yang berpotensi menyebabkan duplikasi transaksi (misalnya: pembayaran terpotong dua kali) jika tidak ditangani dengan mekanisme idempotency yang tepat.]
 
 ---
 
