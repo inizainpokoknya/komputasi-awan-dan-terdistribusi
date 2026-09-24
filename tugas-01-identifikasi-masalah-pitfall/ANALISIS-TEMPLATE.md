@@ -45,4 +45,9 @@
 
 ## Kesimpulan Kelompok
 
-[Ringkasan: jika FoodGo memperbaiki ketiga pitfall ini, apa arsitektur yang disarankan secara garis besar? Kaitkan dengan Tugas 2.]
+Jika ketiga pitfall ini diperbaiki, arsitektur yang disarankan secara garis besar adalah arsitektur *microservices* yang terdistribusi secara aktif-aktif, dengan mekanisme *resiliency* di setiap titik komunikasi, yang mencakup:
+
+* **Isolasi layanan:** Memecah proses monolitik menjadi **service-service** independen (pesanan, pembayaran, notifikasi kurir) yang masing-masing punya siklus *deploy* dan skalanya sendiri, sehingga kegagalan satu modul tidak menjalar ke modul lain.
+* **Kontrol waktu dan kegagalan antar-service:** Penerapan timeout yang realistis, retry dengan exponential backoff + jitter, dan circuit breaker untuk mencegah efek domino ketika satu service bermasalah.
+* **Redundansi dan self-healing:** Menempatkan banyak instans per service di belakang load balancer dengan health check otomatis, serta memanfaatkan orkestrasi (mis. Kubernetes) agar sistem bisa pulih sendiri tanpa intervensi manual saat ada instans yang crash.
+* **Jaminan konsistensi & idempotency:** Karena mekanisme retry dan multi-instans membuka risiko duplikasi transaksi, diperlukan idempotency key pada operasi pembayaran/pesanan serta strategi konsistensi data yang jelas (misalnya lewat distributed lock atau event driven consistency).
