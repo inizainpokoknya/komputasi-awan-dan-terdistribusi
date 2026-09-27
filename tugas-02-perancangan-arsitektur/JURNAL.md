@@ -15,8 +15,12 @@ Sedangkan buat Kurir sama Resto, mereka gapunya urusan langsung sama proses baya
 
 Ini juga yang jadi solusi buat masalah tim Kurir yang katanya suka bikin down modul lain pas deploy ulang (masalah dari Tugas 1). Karena sekarang Kurir cuma "denger" broker doang, jadi kalau mereka mau redeploy servicenya, Pesanan gaikut down.
 
-## Revisi Diagram V1 -> V2 -> V3
+## Revisi Diagram V1 -> V2
 
+Diagram versi 1 kemarin cuma kotak-kotak doang, panahnya belum jelas mana yang sync mana yang async — istilahnya masih "asal ada panah" aja, gaada penanda jenis komunikasinya.
+
+Di v2 ini kita perbaiki jadi alur per komponen yang lebih jelas: Pelanggan kirim request ke Service Pesanan (ditandain sync), Pesanan manggil Pembayaran lewat RPC (sync juga), abis itu Pesanan publish event OrderCreated ke Message Broker (async), terus broker nerusin (subscribe) ke Service Notifikasi Kurir sama Service Katalog Resto. Setiap panah sekarang dikasih label jenis komunikasinya biar keliatan mana yang request-response biasa sama mana yang event-based.
+<img src="diagram/Diagram%20Versi%202.png" alt="Diagram Versi 2" width="600">
 ## Log Penggunaan AI (Level 2)
 
 > Wajib diisi sesuai kebijakan Level 2 di [`../RUBRIK-UMUM.md`](../RUBRIK-UMUM.md). Tulis "Tidak memakai AI" pada baris pertama jika memang tidak dipakai. Hanya untuk brainstorming ide/outline — bukan untuk kode/analisis/teks akhir.
