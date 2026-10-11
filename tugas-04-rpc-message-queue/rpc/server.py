@@ -11,6 +11,7 @@ saldo_user = {
     "user2": 120000,
 }
 
+DELAY_DETIK = 2
 
 def cek_saldo(user_id: str) -> float:
     """Kembalikan saldo user_id saat ini."""
