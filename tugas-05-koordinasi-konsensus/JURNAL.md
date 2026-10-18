@@ -6,8 +6,13 @@
 - **TODO 2 :** Awalnya ingin menggunakan `time.sleep(2)` tetapi ketika digunakan selalu menunggu penuh walaupun OK sudah terkirim. Pada akhinya `time.sleep(2)` tidak jadi digunakan dan diganti `threading.Event`. Pada node 5 ELECTION diterima dari banyak node yang menjadikan ELECTION ganda. Flag `election_running` dengan lock digunakan untuk mengatasi ELECTION ganda yang terjadi. 
 
 ## Skenario 1: Start normal
-- Leader yang terpilih: ...
-- Log/observasi: ...
+- Leader terpilih: Node 5 (ID tertinggi).Node 1 hingga 4 berhasil memperbarui status dan mencatat log Leader sekarang adalah node 5.   
+- Log dan Observasi:
+    - Node dinyalakan satu per satu secara manual. Karena Node 5 baru aktif sekitar pukul `09:32:20`, Node 4 sempat mendeklarasikan diri sebagai leader sementara pada `09:32:22.129`. Hal ini terjadi karena pesan `ELECTION` dari Node 4 ke Node 5 gagal terkirim saat Node 5 masih dalam keadaan mati. 
+    - Setelah Node 5 menyala, ia langsung memulai election. Karena tidak mendapat balasan `OK` dari node mana pun, Node 5 menyatakan dirinya sebagai leader pada `09:32:23.404` lalu mem-broadcast pesan `COORDINATOR`. Merespons pesan tersebut, Node 1 hingga 4 memindahkan status leader mereka dari Node 4 ke Node 5 (proses takeover oleh ID tertinggi).   
+    - Pada pukul `09:32:34.277` , seluruh jaringan telah mencapai konsensus bahwa leader adalah Node 5.   
+    - Waktu pengiriman pesan antar-node terukur sekitar ±1 detik per pesan (kemungkinan dipengaruhi oleh perilaku delay `localhost` pada sistem Windows). Akibatnya, proses broadcast `COORDINATOR` ke seluruh node memakan waktu total sekitar ±4 detik.   
+    - Bukti: Tangkapan layar terminal Node 1 hingga 5 terlampir di dalam folder bukti/ (Skenario 1).   
 
 ## Skenario 2: Leader dimatikan
 - Leader baru yang terpilih: ...
