@@ -15,8 +15,16 @@
     - Bukti: Tangkapan layar terminal Node 1 hingga 5 terlampir di dalam folder bukti/ (Skenario 1).   
 
 ## Skenario 2: Leader dimatikan
-- Leader baru yang terpilih: ...
-- Berapa lama waktu sampai leader baru terdeteksi: ...
+- Leader baru yang terpilih: **Node 4** (Port 5004). Seluruh node yang tersisa (Node 1, 2, dan 3) berhasil mencatat `Leader sekarang adalah node 4`.
+- Berapa lama waktu sampai leader baru terdeteksi dan disepakati:
+  - **Waktu Deteksi Awal:** Node 5 dimatikan paksa dengan `Ctrl+C`. Mekanisme polling `PING` periodik mendeteksi hilangnya respons Node 5 pada pukul `09:36:51.472` (Node 1), `09:36:51.644` (Node 4), dan `09:36:51.911` (Node 2).
+  - **Waktu Pemilihan Leader Baru:** Node 4 mengirimkan `ELECTION` ke Node 5 (gagal karena socket tertutup). Setelah tidak ada balasan `OK` selama `ELECTION_TIMEOUT` (2 detik), Node 4 menyatakan diri sebagai leader pada pukul `09:36:55.680` (**±4,0 detik** setelah deteksi awal).
+  - **Waktu Konsensus Penuh:** Node 4 menyiarkan `COORDINATOR` ke semua peer. Node 1 menerima pada `09:36:56.686`, Node 2 pada `09:36:57.697`, dan Node 3 pada `09:36:58.704`. Seluruh sistem kembali sinkron dan menyepakati leader baru pada **±7,1 detik** setelah deteksi awal.
+- Log/observasi & analisis:
+  - **Penyebab Durasi Nyata > Teori:** Secara teori, waktu re-election adalah interval ping (3 detik) + timeout OK (2 detik) = 5 detik. Namun pada pengujian riil memakan waktu ~7 detik. Hal ini disebabkan oleh:
+    1. Upaya koneksi TCP socket ke node yang mati (Node 5) memerlukan waktu timeout socket (~1–2 detik) sebelum sistem mengonfirmasi *connection failure*.
+    2. Broadcast pesan di Windows loopback interface (`localhost`) membutuhkan waktu sekitar ~1 detik per pesan.
+  - **Korelasi dengan Kasus FoodGo:** Jeda waktu transisi ~7 detik ini membuktikan kelemahan *single point of failure* (SPOF) sementara pada Bully Algorithm. Selama 7 detik tidak ada leader yang aktif, antrean pesanan FoodGo pusat harus ditahan (freeze) agar tidak terjadi inkonsistensi urutan pesanan
 
 ## Log Penggunaan AI (Level 2)
 
