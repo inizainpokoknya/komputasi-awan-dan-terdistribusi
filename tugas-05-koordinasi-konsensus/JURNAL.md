@@ -1,7 +1,9 @@
 # Jurnal Proses — Tugas 5
 
 ## Implementasi Bully
-- Kendala saat mengisi TODO 1-4: ...
+- Kendala saat mengisi TODO 1-4: 
+- **TODO 1 : handler berjalan di thread perkoneksi, sedangkan `start_election()` memblokir kurang lebih 2 detik karena menunggu OK. node juga hars mengirimkan OK ke setiap pengirim ELECTION.
+- **TODO 2 : Awalnya ingin menggunakan `time.sleep(2)` tetapi ketika digunakan selalu menunggu penuh walaupun OK sudah terkirim. Pada akhinya `time.sleep(2)` tidak jadi digunakan dan diganti `threading.Event`. Pada node 5 ELECTION diterima dari banyak node yang menjadikan ELECTION ganda. Flag `election_running` dengan lock digunakan untuk mengatasi ELECTION ganda yang terjadi. 
 
 ## Skenario 1: Start normal
 - Leader yang terpilih: ...
