@@ -95,6 +95,44 @@ sequenceDiagram
     B-->>P: Saldo = 70.000 (benar)
     B->>B: 2 detik kemudian replikasi tiba, saldo = 70.000 (versi 2)
 ```
+## Skenario Tambahan: Studi Kasus Aplikasi Ojek Online
+
+Untuk skenario tambahan ini, kami membuat analisis studi kasus menggunakan **aplikasi ojek online** (seperti Gojek atau Grab). Kita asumsikan aplikasi ini berjalan dengan dua server regional, misalnya di Jakarta dan Surabaya. Tujuannya adalah untuk menunjukkan bahwa di dalam satu aplikasi yang sama, kita bisa menerapkan **model konsistensi data yang berbeda-beda**, tergantung seberapa besar dampak bisnis dari data tersebut.
+
+### Kasus A: Penugasan Orderan ke Driver (*Order Assignment*)
+
+**Masalah:** 
+Bayangkan ada satu pesanan yang di-*blast* ke beberapa driver sekaligus. Lalu, ada dua driver yang memencet tombol "Terima" di waktu yang hampir bersamaan—satu driver nge-ping ke server Jakarta, dan satu lagi ke server Surabaya. Kalau sistemnya hanya mengandalkan *eventual consistency*, kedua server akan sama-sama melihat bahwa pesanan tersebut masih "tersedia". Akibatnya, pesanan malah masuk ke dua-duanya (*double assignment*).
+
+**Model yang tepat: *Sequential / Strong Consistency***
+
+*   **Dampak bisnis:** Kalau dibiarkan, dua driver akan datang ke satu titik jemput yang sama. Jelas salah satu driver akan rugi waktu dan bensin, yang berujung pada komplain. Penumpang juga pasti kebingungan, perusahaan harus keluar uang untuk kompensasi, dan reputasi aplikasi bisa turun.
+*   **Alasan teknis:** Karena risikonya besar, operasi "terima pesanan" ini harus bersifat atomik (*compare-and-set*). Jadi, perubahan status dari `DITAWARKAN` menjadi `DITERIMA` hanya boleh berhasil untuk satu pemenang saja melalui satu server utama (*leader*). Dengan begitu, semua server akan melihat urutan data yang sama persis.
+
+### Kasus B: Update Titik Lokasi Driver di Peta
+
+**Masalah:** 
+Titik ikon motor driver di peta penumpang terkadang *ngelag* atau tertinggal sekitar 1 sampai 3 detik dari lokasi aslinya.
+
+**Model yang tepat: *Eventual Consistency***
+
+*   **Dampak bisnis:** Dampaknya sangat kecil. Titik lokasi driver toh dikirim setiap beberapa detik, jadi data yang lama akan langsung tertimpa oleh data baru. Kalau kita memaksakan *strong consistency* di fitur ini, sistem justru bakal melambat dan boros biaya *resource* hanya untuk mengurus data yang cepat basi.
+*   **Solusi tambahan:** Agar *user experience* tetap nyaman, kita bisa menambahkan **Monotonic Reads**. Tujuannya supaya ikon motor driver tidak pernah "melompat mundur" ke lokasi sebelumnya, apalagi kalau koneksi internet penumpang sedang tidak stabil atau berpindah jaringan.
+
+### Kasus C: Status Pesanan di Layar Penumpang (*Client-Centric*)
+
+Untuk kasus ini, kalau seorang penumpang baru saja membatalkan pesanannya, layar HP-nya harus saat itu juga menampilkan status "Dibatalkan". Jangan sampai layarnya masih menampilkan "Mencari driver" hanya karena server replikanya belum selesai sinkronisasi. 
+Oleh karena itu, model yang tepat adalah **Read-Your-Writes**. Intinya, pengguna harus selalu bisa langsung melihat pembaruan data dari aksi yang baru saja dia lakukan sendiri.
+
+---
+
+**Ringkasan Analisis Skenario:**
+
+| Jenis Data | Model Konsistensi | Alasan & Dampak Bisnis |
+| :--- | :--- | :--- |
+| **Penugasan driver ke pesanan** | *Sequential / Strong* | Mencegah *double assignment*. Kerugiannya bersifat langsung (waktu, bensin, kompensasi) dan merusak reputasi. |
+| **Lokasi *live* driver** | *Eventual (+ Monotonic Reads)* | Datanya sangat cepat basi. Selisih beberapa detik tidak merugikan secara bisnis, asal tidak mundur ke belakang. |
+| **Status pesanan milik penumpang** | *Client-centric: Read-Your-Writes* | Penumpang mutlak harus melihat hasil dari aksi yang baru saja ia lakukan (seperti *cancel* order). |
 
 ### Bagian 2 — Simulasi (opsional, nilai tambah)
 
