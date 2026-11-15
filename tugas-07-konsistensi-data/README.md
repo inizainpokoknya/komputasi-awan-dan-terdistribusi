@@ -39,7 +39,62 @@ Pada saldo kesalahan kecil dan sementara pun berubah menjadi kerugian nyata yang
 | Rating, jumlah ulasan, menu, lokasi driver | Eventual |
 
 2. Jika kalian menyimpulkan Eventual Consistency saja **tidak cukup** untuk skenario ini, usulkan pendekatan **Client-Centric Consistency** yang relevan (mis. *Read-Your-Writes*: pelanggan yang baru top-up harus selalu melihat saldo terbarunya sendiri, walau replika lain belum sinkron).
+
+### Usulan: Read-Your-Writes (Client-Centric Consistency)
+
+Sequential Consistency global menambah latensi karena setiap penulisan harus disinkronkan ke semua replika. Jalan tengahnya adalah **Read-Your-Writes**: pelanggan yang baru menulis (top-up) dijamin selalu membaca hasil tulisannya sendiri, meskipun replika lain belum sinkron.
+ 
+Cara kerja:
+ 
+1. Setiap penulisan saldo menaikkan nomor versi, dan klien menyimpan versi terakhir yang ia tulis (misalnya versi 2).
+2. Saat klien membaca dari replika mana pun (misalnya Bandung), ia menyertakan versi minimal yang ia butuhkan.
+3. Jika versi di replika lebih rendah, pembacaan dialihkan (*redirect*) ke server yang sudah memuat tulisan itu (Jakarta), sehingga saldo yang terbaca selalu benar.
+Dampaknya, kasus pelanggan yang top-up lewat Jakarta lalu memesan lewat Bandung tidak lagi ditolak. Tambahan latensi hanya terjadi pada pembacaan yang replikanya masih basi, bukan pada setiap operasi.
+ 
+Keterbatasan: jaminan ini hanya berlaku bagi klien yang menulis. Pihak lain bisa melihat data lama sampai replikasi selesai. Pengecekan dan pengurangan saldo saat pembayaran tetap harus dilakukan di server yang memegang data terbaru agar tidak terjadi pembelanjaan ganda.
+ 
+
 3. Gambarkan **diagram alir urutan (sequence diagram)** yang menunjukkan operasi read/write antara pelanggan, server Jakarta, server Bandung, dan proses replikasi — untuk skenario **tanpa** jaminan konsistensi (bug terjadi) DAN skenario **dengan** solusi yang kalian usulkan (bug teratasi). Pakai Mermaid (`sequenceDiagram`) di `README.md` — lihat contoh cara pakai di Tugas 2.
+
+**a. Tanpa jaminan konsistensi (bug terjadi)**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as Pelanggan
+    participant J as Server Jakarta
+    participant B as Server Bandung
+ 
+    P->>J: Top-up Rp50.000
+    J->>J: Tulis saldo = 50.000 (versi 1)
+    J-->>P: Top-up berhasil
+    J--)B: Replikasi saldo 50.000 (tertunda 2 detik)
+    P->>B: Baca saldo untuk bayar pesanan
+    B-->>P: Saldo = 0 (data basi)
+    Note over P,B: BUG stale read, transaksi ditolak padahal saldo cukup
+    B->>B: 2 detik kemudian replikasi tiba, saldo = 50.000 (versi 1)
+```
+
+**b. Dengan solusi Read-Your-Writes (bug teratasi)**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as Pelanggan
+    participant J as Server Jakarta
+    participant B as Server Bandung
+ 
+    P->>J: Top-up Rp20.000
+    J->>J: Tulis saldo = 70.000 (versi 2)
+    J-->>P: Berhasil, klien menyimpan versi 2
+    J--)B: Replikasi saldo 70.000 (tertunda 2 detik)
+    P->>B: Baca saldo, minta versi minimal 2
+    B->>B: Cek versi lokal 1 lebih kecil dari 2, replika masih stale
+    B->>J: Alihkan (redirect) pembacaan ke Jakarta
+    J-->>B: Saldo = 70.000 (versi 2)
+    B-->>P: Saldo = 70.000 (benar)
+    B->>B: 2 detik kemudian replikasi tiba, saldo = 70.000 (versi 2)
+```
 
 ### Bagian 2 — Simulasi (opsional, nilai tambah)
 
